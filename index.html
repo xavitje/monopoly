@@ -2,160 +2,308 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Monopoly Controller</title>
+  <meta name="theme-color" content="#0b2b3a" />
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 16px; background: #0b2b3a; color: #eef6fb; }
-    h1 { margin: 0 0 12px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
-    button { padding: 12px 16px; font-size: 16px; border-radius: 8px; border: 1px solid #d9eef7; background: #164b63; color: #fff; cursor: pointer; }
-    button:active { transform: translateY(1px); }
-    input, select { padding: 10px 12px; font-size: 16px; border-radius: 8px; border: 1px solid #79b8d1; background: #0f3a4c; color: #fff; }
-    .status { margin-top: 12px; font-size: 14px; opacity: 0.9; }
-    .kbd { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; padding: 2px 6px; border-radius: 6px; background: #0f3a4c; border: 1px solid #2f6880; }
-    .grid { display: grid; grid-template-columns: repeat(3, minmax(100px,1fr)); gap: 10px; max-width: 360px; }
+    :root{
+      --bg:#0b2b3a; --bg2:#0e3a4c; --card:#0f3f54; --muted:#99cfe2;
+      --accent:#19a4d6; --ok:#36d399; --err:#f87272; --btn:#16556f; --btn2:#1c6a88; --border:#2b708a;
+    }
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#07202b);
+         color:#e9f6fb; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+    .wrap{max-width:740px;margin:0 auto;padding:16px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    h1{font-size:20px;margin:0}
+    .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--border);border-radius:14px;padding:14px;
+          box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    .row{display:flex;flex-wrap:wrap;gap:10px}
+    label{font-size:14px;opacity:.95}
+    input,select{
+      padding:10px 12px;font-size:16px;border-radius:10px;border:1px solid var(--border);background:#0d3444;color:#fff;
+      outline:none;min-width:90px
+    }
+    .btn{
+      appearance:none;border:1px solid var(--border);background:linear-gradient(180deg,var(--btn),var(--btn2));
+      color:#fff;border-radius:12px;padding:12px 14px;font-size:16px;cursor:pointer;transition:.1s;user-select:none
+    }
+    .btn:active{transform:translateY(1px);filter:brightness(1.05)}
+    .btn.ok{background:linear-gradient(180deg,#1f8f6b,#1a7b5d)}
+    .btn.warn{background:linear-gradient(180deg,#8f2b2b,#7b2323)}
+    .status{
+      display:flex;align-items:center;gap:10px;font-size:14px;margin-top:10px;color:var(--muted)
+    }
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--err);box-shadow:0 0 0 2px rgba(0,0,0,.2) inset}
+    .dot.ok{background:var(--ok)}
+    .pad{display:grid;grid-template-columns:repeat(3,minmax(84px,1fr));gap:10px;touch-action:manipulation;margin-top:8px}
+    .big{padding:18px 0;font-size:18px}
+    .col{display:flex;flex-direction:column;gap:10px}
+    .ghost{opacity:.75}
+    .pill{
+      padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#0f3a4c;color:#cde9f5;
+      font-size:12px
+    }
+    footer{margin-top:14px;font-size:12px;color:#aacedd;opacity:.9}
+    @media (min-width:640px){
+      .pad{grid-template-columns:repeat(4,minmax(90px,1fr))}
+      .big{font-size:20px}
+    }
   </style>
 </head>
 <body>
-  <h1>Monopoly Controller</h1>
+  <div class="wrap">
+    <header>
+      <h1>Monopoly Controller</h1>
+      <span class="pill">Mobile-ready</span>
+    </header>
 
-  <div class="row">
-    <label>Speler ID (1..6):
-      <input id="pid" type="number" min="1" max="6" value="1" />
-    </label>
-    <label>Server:
-      <select id="server">
-        <option value="wss://felipe-stoical-paradoxically.ngrok-free.dev">wss://felipe-stoical-paradoxically.ngrok-free.dev</option>
-      </select>
-    </label>
-    <button id="connect">Verbinden</button>
-    <button id="disconnect">Verbreken</button>
-  </div>
+    <section class="card" aria-label="Connectie">
+      <div class="row" style="align-items:flex-end">
+        <div class="col" style="min-width:160px">
+          <label for="pid">Speler ID (1..6)</label>
+          <input id="pid" type="number" min="1" max="6" value="1" inputmode="numeric" />
+        </div>
+        <div class="col" style="min-width:240px;flex:1">
+          <label for="server">WebSocket server</label>
+          <input id="server" type="url" placeholder="wss://<jouw-ngrok>.ngrok-free.app" />
+        </div>
+        <button id="connect" class="btn">Verbinden</button>
+        <button id="disconnect" class="btn warn">Verbreken</button>
+      </div>
+      <div class="status">
+        <span id="dot" class="dot" aria-hidden="true"></span>
+        <span id="status">Niet verbonden</span>
+      </div>
+    </section>
 
-  <div class="row">
-    <button id="btnA">A (Gooien)</button>
-    <button id="btnStart">Start (Gooien)</button>
-    <button id="btnX">X (Koop)</button>
-    <button id="btnY">Y (Veil)</button>
-  </div>
+    <section class="card" style="margin-top:12px" aria-label="Bediening">
+      <div class="row">
+        <button id="btnA" class="btn big" style="flex:1">A (Gooien)</button>
+        <button id="btnStart" class="btn big" style="flex:1">Start (Gooien)</button>
+        <button id="btnX" class="btn big" style="flex:1">X (Koop)</button>
+        <button id="btnY" class="btn big" style="flex:1">Y (Veil)</button>
+      </div>
 
-  <div class="row">
-    <div class="grid">
-      <button id="up">↑</button>
-      <button id="down">↓</button>
-      <button id="left">←</button>
-      <button id="right">→</button>
-      <button id="b">B</button>
-      <button id="select">Select</button>
-    </div>
-  </div>
+      <div class="pad" style="margin-top:12px">
+        <button id="up" class="btn">↑</button>
+        <button id="down" class="btn">↓</button>
+        <button id="left" class="btn">←</button>
+        <button id="right" class="btn">→</button>
+        <button id="b" class="btn ghost">B</button>
+        <button id="select" class="btn ghost">Select</button>
+      </div>
+      <div class="status">
+        Tip: tik kort op A/Start voor gooien; X is kopen, Y is veilen. Ingedrukt houden voorkomt de edge‑trigger. 
+      </div>
+    </section>
 
-  <div class="status">
-    Status: <span id="status">Niet verbonden</span><br />
-    Tip: Tik kort op A/Start om te gooien. X = koop, Y = veilen. Houd geen knoppen ingedrukt om herhaalde acties te voorkomen.
+    <footer>
+      Werkt met jouw ngrok WebSocket tunnel en stuurt JSON naar de lokale UDP‑server van het spel.
+    </footer>
   </div>
 
   <script>
-    // Config
-    const wsSelect = document.getElementById('server');
-    const pidInput = document.getElementById('pid');
+    // Elementen
+    const pidEl = document.getElementById('pid');
+    const serverEl = document.getElementById('server');
+    const dotEl = document.getElementById('dot');
     const statusEl = document.getElementById('status');
+    const btnConnect = document.getElementById('connect');
+    const btnDisconnect = document.getElementById('disconnect');
 
+    // Knoppen
+    const mapButtons = [
+      ['btnA','a'], ['btnStart','start'], ['btnX','x'], ['btnY','y'],
+      ['up','up'], ['down','down'], ['left','left'], ['right','right'],
+      ['b','b'], ['select','select']
+    ];
+
+    // State
     let ws = null;
-    let pressed = {
-      up:0, down:0, left:0, right:0,
-      a:0, b:0, x:0, y:0, start:0, select:0,
-      lx:0.0, ly:0.0, rx:0.0, ry:0.0
-    };
+    let pressed = resetState();
     let sendTimer = null;
+    let lastSend = 0;
 
-    function logStatus(txt, ok=true) {
-      statusEl.textContent = txt;
-      statusEl.style.color = ok ? '#a7f3d0' : '#fca5a5';
+    // Edge-trigger client‑side: onthoud vorige verzonden toestand om herhaal te reduceren
+    let prevSent = resetState();
+
+    // Auto-release timers voor tik-gedrag, zodat 1 tap = 1 event
+    const autoReleaseMs = 140;
+    const autoTimers = new Map();
+
+    // Init: vul server vanuit URL fragment ?wss=...
+    (function initFromQuery(){
+      try{
+        const url = new URL(window.location.href);
+        const wss = url.searchParams.get('wss');
+        if (wss) serverEl.value = wss;
+      }catch(e){}
+    })();
+
+    btnConnect.addEventListener('click', connect);
+    btnDisconnect.addEventListener('click', disconnect);
+
+    // Bind alle knoppen met nette touch/mouse-afhandeling
+    for (const [id,key] of mapButtons){
+      bindPress(id, key);
     }
 
-    function connect() {
-      const url = wsSelect.value.trim();
-      try {
-        ws = new WebSocket(url);
-      } catch (e) {
-        logStatus('WS fout bij openen', false);
-        return;
+    // Keyboard fallback (desktop debugging)
+    const keyMapDown = {
+      ' ': 'a', 'Enter':'start', 'x':'x','X':'x', 'y':'y','Y':'y',
+      'ArrowUp':'up','ArrowDown':'down','ArrowLeft':'left','ArrowRight':'right'
+    };
+    const keyMapUp = keyMapDown;
+    window.addEventListener('keydown', (e)=>{
+      const key = keyMapDown[e.key];
+      if (!key) return;
+      e.preventDefault();
+      setPressed(key, 1, true);
+    }, {passive:false});
+    window.addEventListener('keyup', (e)=>{
+      const key = keyMapUp[e.key];
+      if (!key) return;
+      e.preventDefault();
+      setPressed(key, 0, true);
+    }, {passive:false});
+
+    function resetState(){
+      return {
+        up:0, down:0, left:0, right:0,
+        a:0, b:0, x:0, y:0, start:0, select:0,
+        lx:0.0, ly:0.0, rx:0.0, ry:0.0
+      };
+    }
+
+    function bindPress(id, key){
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const onDown = (e)=>{
+        e.preventDefault();
+        setPressed(key, 1);
+        // Auto-release zodat tik kort is en edge-trigger betrouwbaar
+        scheduleAutoRelease(key);
+      };
+      const onUp = (e)=>{
+        e.preventDefault();
+        setPressed(key, 0);
+        clearAutoRelease(key);
+      };
+
+      // Mobile touch
+      el.addEventListener('touchstart', onDown, {passive:false});
+      el.addEventListener('touchend', onUp, {passive:false});
+      el.addEventListener('touchcancel', onUp, {passive:false});
+      // Mouse
+      el.addEventListener('mousedown', onDown);
+      el.addEventListener('mouseup', onUp);
+      el.addEventListener('mouseleave', onUp);
+    }
+
+    function scheduleAutoRelease(key){
+      clearAutoRelease(key);
+      const t = setTimeout(()=>{
+        setPressed(key, 0);
+      }, autoReleaseMs);
+      autoTimers.set(key, t);
+    }
+    function clearAutoRelease(key){
+      const t = autoTimers.get(key);
+      if (t){ clearTimeout(t); autoTimers.delete(key); }
+    }
+
+    function setPressed(key, val, fromKeyboard=false){
+      // Normaliseer naar 0/1 en voorkom spam
+      const v = val ? 1 : 0;
+      if (pressed[key] === v) return;
+      pressed[key] = v;
+      // throttle: stuur max 20/s
+      trySend(50);
+    }
+
+    function connect(){
+      const url = (serverEl.value || '').trim();
+      if (!/^wss?:\/\//i.test(url)){
+        return log('Ongeldige WS URL (bijv. wss://... )', false);
       }
-      ws.onopen = () => {
-        logStatus('Verbonden met ' + url);
+      if (ws && ws.readyState === WebSocket.OPEN){
+        return log('Al verbonden', true);
+      }
+      try{
+        ws = new WebSocket(url);
+      }catch(e){
+        return log('WS openen mislukt', false);
+      }
+      ws.onopen = ()=>{
+        log('Verbonden', true);
         startSender();
       };
-      ws.onmessage = (ev) => {
-        // optioneel: handshake
-        // console.log('msg', ev.data);
+      ws.onmessage = (ev)=>{
+        // optioneel debug: console.log('msg', ev.data)
       };
-      ws.onclose = () => {
-        logStatus('Verbinding gesloten', false);
+      ws.onclose = ()=>{
+        log('Verbinding gesloten', false);
         stopSender();
         ws = null;
       };
-      ws.onerror = () => {
-        logStatus('WS fout', false);
+      ws.onerror = ()=>{
+        log('WS fout', false);
       };
     }
 
-    function disconnect() {
-      if (ws) {
-        try { ws.close(); } catch (e) {}
-        ws = null;
-      }
+    function disconnect(){
+      try{ if (ws) ws.close(); }catch(e){}
+      ws = null;
       stopSender();
-      logStatus('Niet verbonden', false);
+      log('Niet verbonden', false);
     }
 
-    function startSender() {
+    function startSender(){
       if (sendTimer) return;
-      sendTimer = setInterval(() => {
-        if (!ws || ws.readyState !== WebSocket.OPEN) return;
-        const pid = Math.max(1, Math.min(6, parseInt(pidInput.value || '1', 10)));
-        const payload = { id: pid, ...pressed };
-        try {
-          ws.send(JSON.stringify(payload));
-        } catch (e) {
-          // noop
-        }
-      }, 50); // 20 Hz
+      sendTimer = setInterval(()=>trySend(0), 50); // 20 Hz
+    }
+    function stopSender(){
+      if (sendTimer){ clearInterval(sendTimer); sendTimer = null; }
     }
 
-    function stopSender() {
-      if (sendTimer) { clearInterval(sendTimer); sendTimer = null; }
+    function trySend(minIntervalMs){
+      const now = performance.now();
+      if (minIntervalMs && (now - lastSend) < minIntervalMs) return;
+      lastSend = now;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      const pid = clamp(parseInt(pidEl.value||'1',10), 1, 6);
+
+      // Edge-trigger: voor A/Start/X/Y sturen we alleen 0->1 front (press) en een korte 1->0 (release via auto-release)
+      const payload = { id: pid, ...pressed };
+
+      // Kleine optimalisatie: stuur niet als niets is veranderd
+      if (!changedSinceLast(payload, prevSent)) return;
+
+      prevSent = {...payload};
+      try{
+        ws.send(JSON.stringify(payload));
+      }catch(e){
+        // ignore
+      }
     }
 
-    function bindPress(id, key) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('touchstart', (e) => { e.preventDefault(); pressed[key]=1; }, {passive:false});
-      el.addEventListener('touchend',   (e) => { e.preventDefault(); pressed[key]=0; }, {passive:false});
-      el.addEventListener('mousedown',  (e) => { e.preventDefault(); pressed[key]=1; });
-      el.addEventListener('mouseup',    (e) => { e.preventDefault(); pressed[key]=0; });
-      el.addEventListener('mouseleave', (e) => { e.preventDefault(); pressed[key]=0; });
+    function changedSinceLast(a, b){
+      // minimal diff om onnodige frames te schrappen
+      for (const k in a){
+        if (a[k] !== b[k]) return true;
+      }
+      return false;
     }
 
-    // Buttons
-    document.getElementById('connect').addEventListener('click', connect);
-    document.getElementById('disconnect').addEventListener('click', disconnect);
+    function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
 
-    bindPress('btnA','a');
-    bindPress('btnStart','start');
-    bindPress('btnX','x');
-    bindPress('btnY','y');
-    bindPress('up','up');
-    bindPress('down','down');
-    bindPress('left','left');
-    bindPress('right','right');
-    bindPress('b','b');
-    bindPress('select','select');
-
-    // Waarschuwing bij weggaan
-    window.addEventListener('beforeunload', () => {
-      try { if (ws) ws.close(); } catch (e) {}
-    });
+    function log(msg, ok){
+      statusEl.textContent = msg;
+      dotEl.classList.toggle('ok', !!ok);
+      statusEl.style.color = ok ? '#b9f2d7' : '#f8b4b4';
+    }
   </script>
 </body>
 </html>
